@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker build -t ygopro-builder .
+docker build -t ygopro-builder -f scripts/Dockerfile .
 
 docker create --name temp-container ygopro-builder
 
