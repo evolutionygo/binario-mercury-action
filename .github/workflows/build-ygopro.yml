@@ -1,0 +1,36 @@
+name: Build ygopro with Docker
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Make build_ygopro.sh executable
+      run: chmod +x scripts/build_ygopro.sh
+
+    - name: Build ygopro using Docker
+      run: ./scripts/build_ygopro.sh
+
+    - name: Upload ygopro binary as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ygopro-binary
+        path: ./build/ygopro
+
+
+
+
