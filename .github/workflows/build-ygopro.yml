@@ -36,10 +36,15 @@ jobs:
         git checkout server
         git rebase upstream/server || (git rebase --abort && echo "rebase_failed=true" >> $GITHUB_ENV)
 
-    - name: Merge as fallback if rebase fails
+    - name: Handle rebase conflicts
       if: env.rebase_failed == 'true'
       run: |
-        git merge upstream/server --no-edit
+        git rebase --skip || echo "rebase_skipped=true" >> $GITHUB_ENV
+
+    - name: Merge as fallback if rebase fails
+      if: env.rebase_failed == 'true' && env.rebase_skipped != 'true'
+      run: |
+        git merge upstream/server --allow-unrelated-histories --no-edit
         git push origin server
 
     - name: Push changes after successful rebase
@@ -60,6 +65,7 @@ jobs:
       with:
         name: ygopro-binary
         path: ./build/ygopro
+
 
 
 
