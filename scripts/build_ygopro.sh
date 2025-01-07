@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bas
 
 docker build -t ygopro-builder -f scripts/Dockerfile .
 
