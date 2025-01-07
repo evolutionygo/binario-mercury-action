@@ -13,16 +13,18 @@ jobs:
   sync-and-build:
     runs-on: ubuntu-latest
 
-    env: # Define el token como variable de entorno global
-      TOKEN: ${{ secrets.BIN_TOKEN }}
-
     steps:
+    - name: Debug BIN_TOKEN availability
+      run: echo "BIN_TOKEN is set and valid"
+      env:
+        TOKEN: ${{ secrets.BIN_TOKEN }}
+
     - name: Checkout your fork
       uses: actions/checkout@v3
       with:
-        repository: termitaklk/ygopro # Tu fork
+        repository: termitaklk/ygopro
         ref: server
-        token: ${{ secrets.BIN_TOKEN }} # Utiliza el token desde secrets directamente
+        token: ${{ secrets.BIN_TOKEN }}
 
     - name: Configure Git identity
       run: |
@@ -45,7 +47,7 @@ jobs:
       run: |
         git push --force-with-lease origin server
       env:
-        GITHUB_TOKEN: ${{ env.TOKEN }} # Usa la variable de entorno
+        GITHUB_TOKEN: ${{ secrets.BIN_TOKEN }}
 
     - name: Merge as fallback if rebase fails
       if: env.rebase_failed == 'true'
@@ -53,7 +55,7 @@ jobs:
         git merge upstream/server --allow-unrelated-histories --no-edit
         git push origin server
       env:
-        GITHUB_TOKEN: ${{ env.TOKEN }} # Usa la variable de entorno
+        GITHUB_TOKEN: ${{ secrets.BIN_TOKEN }}
 
     - name: Verify repository status
       run: git log --oneline --graph --decorate --all
@@ -69,6 +71,7 @@ jobs:
       with:
         name: ygopro-binary
         path: ./build/ygopro
+
 
 
 
