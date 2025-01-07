@@ -15,49 +15,21 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0 # Clona todo el historial para asegurarte de que todos los archivos estén presentes
 
-    - name: Log repository structure
-      run: |
-        echo "Logging repository structure..."
-        ls -R # Lista todos los archivos y carpetas
-
-    - name: Verify scripts directory
-      run: |
-        echo "Checking the scripts/ directory..."
-        ls -l scripts/ # Verifica específicamente el contenido de la carpeta scripts
-
-    - name: Verify build_ygopro.sh existence
-      run: |
-        echo "Checking if build_ygopro.sh exists..."
-        if [ -f scripts/build_ygopro.sh ]; then
-          echo "scripts/build_ygopro.sh exists!"
-        else
-          echo "ERROR: scripts/build_ygopro.sh does not exist!"
-          exit 1
-        fi
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
     - name: Make build_ygopro.sh executable
       run: chmod +x scripts/build_ygopro.sh
 
-    - name: Verify permissions of build_ygopro.sh
-      run: |
-        echo "Verifying permissions of build_ygopro.sh..."
-        ls -l scripts/build_ygopro.sh # Muestra los permisos del archivo
-
     - name: Build ygopro using Docker
-      run: |
-        echo "Running build_ygopro.sh..."
-        ./scripts/build_ygopro.sh
+      run: ./scripts/build_ygopro.sh
 
     - name: Upload ygopro binary as artifact
       uses: actions/upload-artifact@v3
       with:
         name: ygopro-binary
         path: ./build/ygopro
-
-
 
 
 
