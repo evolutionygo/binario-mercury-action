@@ -19,6 +19,7 @@ jobs:
       with:
         repository: termitaklk/ygopro # Tu fork
         ref: server
+        token: ${{ secrets.BIN_TOKEN }} # Usar el token BIN_TOKEN
 
     - name: Configure Git identity
       run: |
@@ -36,20 +37,20 @@ jobs:
         git checkout server
         git rebase upstream/server || (git rebase --abort && echo "rebase_failed=true" >> $GITHUB_ENV)
 
-    - name: Handle rebase conflicts
-      if: env.rebase_failed == 'true'
+    - name: Push changes after successful rebase
+      if: env.rebase_failed != 'true'
       run: |
-        git rebase --skip || echo "rebase_skipped=true" >> $GITHUB_ENV
+        git push --force-with-lease origin server
+      env:
+        GITHUB_TOKEN: ${{ secrets.BIN_TOKEN }}
 
     - name: Merge as fallback if rebase fails
-      if: env.rebase_failed == 'true' && env.rebase_skipped != 'true'
+      if: env.rebase_failed == 'true'
       run: |
         git merge upstream/server --allow-unrelated-histories --no-edit
         git push origin server
-
-    - name: Push changes after successful rebase
-      if: env.rebase_failed != 'true'
-      run: git push --force-with-lease origin server
+      env:
+        GITHUB_TOKEN: ${{ secrets.BIN_TOKEN }}
 
     - name: Verify repository status
       run: git log --oneline --graph --decorate --all
@@ -65,6 +66,7 @@ jobs:
       with:
         name: ygopro-binary
         path: ./build/ygopro
+
 
 
 
