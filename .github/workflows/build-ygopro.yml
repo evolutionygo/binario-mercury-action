@@ -30,22 +30,11 @@ jobs:
         git remote add upstream https://github.com/mycard/ygopro.git
         git fetch upstream
 
-    - name: Check for new commits in upstream
-      id: check-updates
+    - name: Rebase local branch with upstream
       run: |
         git checkout server
-        git fetch upstream server
-        if [ "$(git rev-list HEAD..upstream/server --count)" -eq 0 ]; then
-          echo "updated=false" >> $GITHUB_ENV
-        else
-          echo "updated=true" >> $GITHUB_ENV
-        fi
-
-    - name: Merge new commits if available
-      if: ${{ env.updated == 'true' }}
-      run: |
-        git merge upstream/server --allow-unrelated-histories --no-edit
-        git push origin server
+        git rebase upstream/server
+        git push --force-with-lease origin server
 
     - name: Verify repository status
       run: git log --oneline --graph --decorate --all
@@ -61,6 +50,7 @@ jobs:
       with:
         name: ygopro-binary
         path: ./build/ygopro
+
 
 
 
