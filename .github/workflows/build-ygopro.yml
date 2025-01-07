@@ -30,11 +30,21 @@ jobs:
         git remote add upstream https://github.com/mycard/ygopro.git
         git fetch upstream
 
-    - name: Rebase local branch with upstream
+    - name: Attempt rebase with upstream
+      id: rebase
       run: |
         git checkout server
-        git rebase upstream/server
-        git push --force-with-lease origin server
+        git rebase upstream/server || (git rebase --abort && echo "rebase_failed=true" >> $GITHUB_ENV)
+
+    - name: Merge as fallback if rebase fails
+      if: env.rebase_failed == 'true'
+      run: |
+        git merge upstream/server --no-edit
+        git push origin server
+
+    - name: Push changes after successful rebase
+      if: env.rebase_failed != 'true'
+      run: git push --force-with-lease origin server
 
     - name: Verify repository status
       run: git log --oneline --graph --decorate --all
@@ -50,6 +60,7 @@ jobs:
       with:
         name: ygopro-binary
         path: ./build/ygopro
+
 
 
 
