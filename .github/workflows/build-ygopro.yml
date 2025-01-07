@@ -1,64 +1,23 @@
-name: Sync Fork and Build ygopro
+name: Build ygopro with Docker
 
 on:
   push:
     branches:
-      - server
+      - main
   pull_request:
     branches:
-      - server
-  workflow_dispatch: # Permite ejecución manual
+      - main
 
 jobs:
-  sync-and-build:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Debug BIN_TOKEN availability
-      run: echo "BIN_TOKEN is set and valid"
-      env:
-        BIN_TOKEN: ${{ secrets.BIN_TOKEN }}
-
-    - name: Checkout your fork
+    - name: Checkout repository
       uses: actions/checkout@v3
-      with:
-        repository: termitaklk/ygopro # Tu fork
-        ref: server
-        token: ${{ secrets.BIN_TOKEN }} # Pasar el token explícitamente
 
-    - name: Configure Git identity
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-
-    - name: Add upstream repo
-      run: |
-        git remote add upstream https://github.com/mycard/ygopro.git
-        git fetch upstream
-
-    - name: Attempt rebase with upstream
-      id: rebase
-      run: |
-        git checkout server
-        git rebase upstream/server || (git rebase --abort && echo "rebase_failed=true" >> $GITHUB_ENV)
-
-    - name: Push changes after successful rebase
-      if: env.rebase_failed != 'true'
-      run: |
-        git push --force-with-lease origin server
-      env:
-        GITHUB_TOKEN: ${{ secrets.BIN_TOKEN }}
-
-    - name: Merge as fallback if rebase fails
-      if: env.rebase_failed == 'true'
-      run: |
-        git merge upstream/server --allow-unrelated-histories --no-edit
-        git push origin server
-      env:
-        GITHUB_TOKEN: ${{ secrets.BIN_TOKEN }}
-
-    - name: Verify repository status
-      run: git log --oneline --graph --decorate --all
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
     - name: Make build_ygopro.sh executable
       run: chmod +x scripts/build_ygopro.sh
