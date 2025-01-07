@@ -7,8 +7,7 @@ on:
   pull_request:
     branches:
       - server
-  workflow_dispatch:
-      
+
 jobs:
   sync-and-build:
     runs-on: ubuntu-latest
@@ -25,13 +24,26 @@ jobs:
         git remote add upstream https://github.com/mycard/ygopro.git
         git fetch upstream
 
-    - name: Sync with upstream (merge)
+    - name: Check for new commits in upstream
+      id: check-updates
       run: |
         git checkout server
+        git fetch upstream server
+        if [ "$(git rev-list HEAD..upstream/server --count)" -eq 0 ]; then
+          echo "No new commits in upstream."
+          echo "updated=false" >> $GITHUB_ENV
+        else
+          echo "New commits found in upstream."
+          echo "updated=true" >> $GITHUB_ENV
+        fi
+
+    - name: Merge new commits if available
+      if: env.updated == 'true'
+      run: |
         git merge upstream/server --no-edit
         git push origin server
 
-    - name: Verify sync status
+    - name: Verify repository status
       run: git log --oneline --graph --decorate --all
 
     - name: Make build_ygopro.sh executable
@@ -45,6 +57,7 @@ jobs:
       with:
         name: ygopro-binary
         path: ./build/ygopro
+
 
 
 
