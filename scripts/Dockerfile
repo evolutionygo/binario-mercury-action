@@ -21,7 +21,7 @@ RUN apt-get update && \
 COPY --from=premake-builder /usr/src/premake/bin/release/premake5 /usr/bin/premake5
 
 RUN git clone --branch=server --recursive --depth=1 https://github.com/termitaklk/ygopro-evolution-bin && \
-    cd ygopro && \
+    cd ygopro-evolution-bin && \
     git submodule foreach git checkout master && \
     premake5 gmake --lua-deb && \
     cd build && \
