@@ -39,7 +39,7 @@ jobs:
         fi
 
     - name: Upload ygopro binary as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ygopro-binary
         path: ./build/*
