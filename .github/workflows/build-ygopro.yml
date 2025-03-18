@@ -8,16 +8,16 @@ on:
     branches:
       - server
   workflow_dispatch:  # ✅ Permite ejecución manual desde GitHub Actions
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Principal Repository (YGOMobile-cn-ko-en)
+      - name: Checkout Principal Repository (Mycard)
         uses: actions/checkout@v3
         with:
-          repository: fallenstardust/YGOMobile-cn-ko-en
+          repository: mycard/ygopro
           ref: server
           path: base-repo
 
