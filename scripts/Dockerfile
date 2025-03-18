@@ -43,7 +43,7 @@ RUN git submodule foreach git checkout master && \
     make config=release -j$(nproc)
 
 # Verificar contenido del binario antes de copiar
-RUN echo "📂 Verificando contenido de /usr/src/ygopro/bin/release/" && \
+RUN echo "📂 Contenido de /usr/src/ygopro/bin/release/ antes de copiar:" && \
     ls -l /usr/src/ygopro/bin/release/
 
 # Preparar la imagen final con el binario compilado
@@ -51,6 +51,10 @@ WORKDIR /usr/src/ygopro
 RUN mkdir -p /build_output && \
     cp /usr/src/ygopro/bin/release/ygopro /build_output/ygopro && \
     strip /build_output/ygopro
+
+# Verificar contenido de /build_output/
+RUN echo "📂 Contenido de /build_output/ después de copiar:" && \
+    ls -l /build_output/
 
 # Imagen final con el binario listo
 FROM debian:bullseye-slim AS final
@@ -69,6 +73,4 @@ RUN strip /usr/bin/ygopro
 WORKDIR /data
 ENTRYPOINT ["/usr/bin/ygopro"]
 
-WORKDIR /data
-ENTRYPOINT ["/usr/bin/ygopro"]
 
