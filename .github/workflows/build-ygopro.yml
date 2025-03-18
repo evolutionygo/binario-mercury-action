@@ -3,7 +3,7 @@ name: Build YGO Mobile with Docker
 on:
   push:
     branches:
-      - main  # ✅ El workflow se ejecuta en la rama main del repositorio del Action
+      - main  # ✅ Workflow se ejecuta en la rama main
   pull_request:
     branches:
       - main
@@ -17,21 +17,30 @@ jobs:
       - name: Checkout Repository of the Action
         uses: actions/checkout@v3
         with:
-          path: action-repo  # ✅ El Action se ejecuta aquí (donde está el script de compilación)
+          path: action-repo  # ✅ Este es el repositorio donde está build_ygopro.sh
 
-      - name: Debug - Verificar scripts en el Action
+      - name: Debug - Verificar existencia del script de compilación
         run: |
-          echo "📂 Listado de archivos en el repo del Action:"
-          ls -l action-repo
-          echo "📂 Listado de archivos en action-repo/scripts/"
-          ls -l action-repo/scripts || echo "⚠️ El directorio scripts/ no existe en el Action"
+          if [ ! -f action-repo/scripts/build_ygopro.sh ]; then
+            echo "❌ ERROR: El script de compilación NO EXISTE en action-repo/scripts/"
+            exit 1
+          fi
+          chmod +x action-repo/scripts/build_ygopro.sh
+          echo "✅ Script de compilación listo."
+
+      - name: Start Docker Build Process
+        run: |
+          echo "🔄 Iniciando el proceso de compilación en Docker..."
+          cd action-repo
+          ./scripts/build_ygopro.sh
+          echo "✅ Proceso de compilación en Docker finalizado."
 
       # ✅ Clonamos el REPO PRINCIPAL (YGOPRO) en la rama SERVER
       - name: Checkout Principal Repository (YGOPRO - MyCard)
         uses: actions/checkout@v3
         with:
           repository: mycard/ygopro
-          ref: server  # ✅ Siempre usamos la rama server
+          ref: server
           path: base-repo
 
       # ✅ Clonamos el REPO SECUNDARIO (ygopro-evolution-bin) en la rama SERVER
@@ -40,58 +49,46 @@ jobs:
           echo "🔄 Clonando el repositorio secundario..."
           git clone --branch=server --depth=1 https://github.com/termitaklk/ygopro-evolution-bin merge-repo
           echo "✅ Repositorio secundario clonado en merge-repo/"
-          ls -l merge-repo
 
       - name: Define List of Files to Replace
         run: |
-          echo "Definiendo archivos a reemplazar..."
+          echo "Definiendo archivos a reemplazar dentro del contenedor..."
           echo "FILES=gframe/deck_manager.cpp gframe/deck_manager.h gframe/data_manager.cpp" >> $GITHUB_ENV
           echo "✅ Archivos definidos: gframe/deck_manager.cpp, gframe/deck_manager.h, gframe/data_manager.cpp"
 
-      - name: Copy and Replace Selected Files
+      - name: Copy and Replace Selected Files in Docker Container
         run: |
-          echo "🔄 Iniciando reemplazo de archivos..."
+          echo "🔄 Copiando archivos modificados dentro del contenedor Docker..."
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ygopro-builder:latest)
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "❌ ERROR: No se encontró un contenedor en ejecución basado en ygopro-builder."
+            exit 1
+          fi
           for file in $FILES; do
             if [ -f "merge-repo/$file" ]; then
-              cp -f "merge-repo/$file" "base-repo/$file"
-              echo "✅ Reemplazado: $file"
+              docker cp "merge-repo/$file" "$CONTAINER_ID:/workspace/$file"
+              echo "✅ Archivo reemplazado dentro del contenedor: $file"
             else
               echo "⚠️ Archivo no encontrado en el repositorio secundario: $file"
             fi
           done
 
-      - name: Debug - Post Merge File Structure
+      - name: Validate Binary Existence in Container
         run: |
-          echo "📂 Estructura de archivos después de la fusión:"
-          ls -lR base-repo/gframe
-
-      - name: Continue with Build Process (Using Action's Script)
-        run: |
-          echo "🔄 Iniciando compilación con el script del Action..."
-          if [ ! -f action-repo/scripts/build_ygopro.sh ]; then
-            echo "❌ ERROR: El script de compilación NO EXISTE en action-repo/scripts/"
+          echo "🔍 Verificando existencia del binario dentro del contenedor..."
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ygopro-builder:latest)
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "❌ ERROR: No se encontró un contenedor en ejecución basado en ygopro-builder."
             exit 1
           fi
-          chmod +x action-repo/scripts/build_ygopro.sh
-          set -x  # 🔍 Muestra todos los comandos ejecutados
-          action-repo/scripts/build_ygopro.sh
-          set +x
-          echo "✅ Compilación finalizada."
+          docker exec "$CONTAINER_ID" ls -l /workspace/build/ygopro || echo "❌ Binario no encontrado dentro del contenedor."
 
-      - name: Debug - Buscar binario en todo el repositorio
+      - name: Copy Compiled Binary from Container
         run: |
-          echo "🔎 Buscando el binario generado en base-repo..."
-          find base-repo -type f -name "ygopro"
-
-      - name: Validate Binary Existence
-        run: |
-          echo "🔍 Verificando existencia del binario compilado..."
-          BINARY_PATH=$(find base-repo -type f -name "ygopro" | head -n 1)
-          if [ -z "$BINARY_PATH" ]; then
-            echo "❌ Binary not found! Error en la compilación."
-            exit 1
-          fi
-          echo "✅ Binario encontrado en: $BINARY_PATH"
+          echo "📂 Copiando el binario compilado fuera del contenedor..."
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ygopro-builder:latest)
+          docker cp "$CONTAINER_ID:/workspace/build/ygopro" base-repo/build/ygopro
+          echo "✅ Binario copiado fuera del contenedor."
 
       - name: Upload YGOPRO Binary as Artifact
         uses: actions/upload-artifact@v4
