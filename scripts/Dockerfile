@@ -42,14 +42,15 @@ RUN git submodule foreach git checkout master && \
     cd build && \
     make config=release -j$(nproc)
 
+# Verificar contenido del binario antes de copiar
+RUN echo "📂 Verificando contenido de /usr/src/ygopro/bin/release/" && \
+    ls -l /usr/src/ygopro/bin/release/
+
 # Preparar la imagen final con el binario compilado
 WORKDIR /usr/src/ygopro
 RUN mkdir -p /build_output && \
-    mv ./bin/release/ygopro /build_output/ygopro && \
-    strip /build_output/ygopro && \
-    mkdir replay expansions && \
-    rm -rf .git* bin obj build ocgcore cmake lua premake* sound textures .travis.yml *.txt appveyor.yml LICENSE README.md *.lua strings.conf system.conf && \
-    ls gframe | sed '/game.cpp/d' | xargs -I {} rm -rf gframe/{}
+    cp /usr/src/ygopro/bin/release/ygopro /build_output/ygopro && \
+    strip /build_output/ygopro
 
 # Imagen final con el binario listo
 FROM debian:bullseye-slim AS final
@@ -59,8 +60,14 @@ RUN apt-get update && \
     env DEBIAN_FRONTEND=noninteractive apt-get install -y libevent-dev libsqlite3-dev liblua5.3-dev && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Verificar que el binario está en la ubicación correcta antes de copiarlo
+RUN ls -l /build_output/ || echo "❌ ERROR: Binario no encontrado en /build_output/"
+
 COPY --from=ygopro-builder /build_output/ygopro /usr/bin/ygopro
 RUN strip /usr/bin/ygopro
+
+WORKDIR /data
+ENTRYPOINT ["/usr/bin/ygopro"]
 
 WORKDIR /data
 ENTRYPOINT ["/usr/bin/ygopro"]
