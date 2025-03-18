@@ -1,48 +1,63 @@
-name: Build ygopro with Docker
+name: Build YGO Mobile with Docker
 
 on:
   push:
     branches:
-      - main
+      - server
   pull_request:
     branches:
-      - main
+      - server
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout Principal Repository (YGOMobile-cn-ko-en)
+        uses: actions/checkout@v3
+        with:
+          repository: fallenstardust/YGOMobile-cn-ko-en
+          ref: server
+          path: base-repo
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Define List of Files to Replace
+        run: |
+          echo "FILES=('ocgcore/ocgcore.cpp' 'ocgcore/ocgcore.h' 'lua/lua_core.cpp')" >> $GITHUB_ENV
 
-    - name: Create build directory
-      run: mkdir -p ./build
+      - name: Checkout Secondary Repository (ygopro-evolution-bin)
+        run: |
+          git clone --branch=server --depth=1 https://github.com/termitaklk/ygopro-evolution-bin merge-repo
 
-    - name: Make build_ygopro.sh executable
-      run: chmod +x scripts/build_ygopro.sh
+      - name: Copy and Replace Selected Files
+        run: |
+          for file in ${FILES[@]}; do
+            if [ -f "merge-repo/$file" ]; then
+              cp -f "merge-repo/$file" "base-repo/$file"
+              echo "Replaced: $file"
+            else
+              echo "File not found in secondary repo: $file"
+            fi
+          done
 
-    - name: Build ygopro using Docker
-      run: ./scripts/build_ygopro.sh
+      - name: Continue with Build Process
+        run: |
+          cd base-repo
+          chmod +x scripts/build_ygopro.sh
+          ./scripts/build_ygopro.sh
 
-    - name: List files in build directory
-      run: ls -l ./build
+      - name: Validate Binary Existence
+        run: |
+          if [ ! -f base-repo/build/ygopro ]; then
+            echo "Binary not found!"
+            exit 1
+          fi
 
-    - name: Validate binary existence
-      run: |
-        if [ ! -f ./build/ygopro ]; then
-          echo "Binary not found!";
-          exit 1;
-        fi
+      - name: Upload YGOPRO Binary as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ygopro-binary
+          path: base-repo/build/ygopro
 
-    - name: Upload ygopro binary as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ygopro-binary
-        path: ./build/*
 
 
 
