@@ -7,7 +7,8 @@ on:
   pull_request:
     branches:
       - server
-
+  workflow_dispatch:  # ✅ Permite ejecución manual desde GitHub Actions
+  
 jobs:
   build:
     runs-on: ubuntu-latest
