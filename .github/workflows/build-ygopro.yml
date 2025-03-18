@@ -3,7 +3,7 @@ name: Build YGO Mobile with Docker
 on:
   push:
     branches:
-      - main  # ✅ Workflow se ejecuta en la rama main
+      - main  # ✅ El workflow se ejecuta en la rama main del repositorio del Action
   pull_request:
     branches:
       - main
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout Repository of the Action
         uses: actions/checkout@v3
         with:
-          path: action-repo  # ✅ El Action se ejecuta aquí (donde está el script)
+          path: action-repo  # ✅ El Action se ejecuta aquí (donde está el script de compilación)
 
       - name: Debug - Verificar scripts en el Action
         run: |
@@ -26,7 +26,7 @@ jobs:
           echo "📂 Listado de archivos en action-repo/scripts/"
           ls -l action-repo/scripts || echo "⚠️ El directorio scripts/ no existe en el Action"
 
-      # ✅ Clonamos el REPO PRINCIPAL en la rama SERVER
+      # ✅ Clonamos el REPO PRINCIPAL (YGOPRO) en la rama SERVER
       - name: Checkout Principal Repository (YGOPRO - MyCard)
         uses: actions/checkout@v3
         with:
@@ -34,7 +34,7 @@ jobs:
           ref: server  # ✅ Siempre usamos la rama server
           path: base-repo
 
-      # ✅ Clonamos el REPO SECUNDARIO en la rama SERVER
+      # ✅ Clonamos el REPO SECUNDARIO (ygopro-evolution-bin) en la rama SERVER
       - name: Checkout Secondary Repository (ygopro-evolution-bin)
         run: |
           echo "🔄 Clonando el repositorio secundario..."
@@ -45,8 +45,8 @@ jobs:
       - name: Define List of Files to Replace
         run: |
           echo "Definiendo archivos a reemplazar..."
-          echo "FILES=ocgcore/ocgcore.cpp ocgcore/ocgcore.h lua/lua_core.cpp" >> $GITHUB_ENV
-          echo "✅ Archivos definidos: ocgcore/ocgcore.cpp, ocgcore/ocgcore.h, lua/lua_core.cpp"
+          echo "FILES=gframe/deck_manager.cpp gframe/deck_manager.h gframe/data_manager.cpp" >> $GITHUB_ENV
+          echo "✅ Archivos definidos: gframe/deck_manager.cpp, gframe/deck_manager.h, gframe/data_manager.cpp"
 
       - name: Copy and Replace Selected Files
         run: |
@@ -63,7 +63,7 @@ jobs:
       - name: Debug - Post Merge File Structure
         run: |
           echo "📂 Estructura de archivos después de la fusión:"
-          ls -lR base-repo
+          ls -lR base-repo/gframe
 
       - name: Continue with Build Process (Using Action's Script)
         run: |
@@ -73,17 +73,25 @@ jobs:
             exit 1
           fi
           chmod +x action-repo/scripts/build_ygopro.sh
+          set -x  # 🔍 Muestra todos los comandos ejecutados
           action-repo/scripts/build_ygopro.sh
+          set +x
           echo "✅ Compilación finalizada."
+
+      - name: Debug - Buscar binario en todo el repositorio
+        run: |
+          echo "🔎 Buscando el binario generado en base-repo..."
+          find base-repo -type f -name "ygopro"
 
       - name: Validate Binary Existence
         run: |
           echo "🔍 Verificando existencia del binario compilado..."
-          if [ ! -f base-repo/build/ygopro ]; then
+          BINARY_PATH=$(find base-repo -type f -name "ygopro" | head -n 1)
+          if [ -z "$BINARY_PATH" ]; then
             echo "❌ Binary not found! Error en la compilación."
             exit 1
           fi
-          echo "✅ Binario encontrado: base-repo/build/ygopro"
+          echo "✅ Binario encontrado en: $BINARY_PATH"
 
       - name: Upload YGOPRO Binary as Artifact
         uses: actions/upload-artifact@v4
