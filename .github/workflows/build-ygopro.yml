@@ -20,43 +20,67 @@ jobs:
           ref: server
           path: base-repo
 
+      - name: Log - Principal Repository Cloned
+        run: |
+          echo "✅ Repositorio principal clonado en base-repo/"
+          ls -l base-repo
+
       - name: Define List of Files to Replace
         run: |
+          echo "Definiendo archivos a reemplazar..."
           echo "FILES=('ocgcore/ocgcore.cpp' 'ocgcore/ocgcore.h' 'lua/lua_core.cpp')" >> $GITHUB_ENV
+          echo "✅ Archivos definidos: ocgcore/ocgcore.cpp, ocgcore/ocgcore.h, lua/lua_core.cpp"
 
       - name: Checkout Secondary Repository (ygopro-evolution-bin)
         run: |
+          echo "🔄 Clonando el repositorio secundario..."
           git clone --branch=server --depth=1 https://github.com/termitaklk/ygopro-evolution-bin merge-repo
+          echo "✅ Repositorio secundario clonado en merge-repo/"
+          ls -l merge-repo
 
       - name: Copy and Replace Selected Files
         run: |
+          echo "🔄 Iniciando reemplazo de archivos..."
           for file in ${FILES[@]}; do
             if [ -f "merge-repo/$file" ]; then
               cp -f "merge-repo/$file" "base-repo/$file"
-              echo "Replaced: $file"
+              echo "✅ Reemplazado: $file"
             else
-              echo "File not found in secondary repo: $file"
+              echo "⚠️ Archivo no encontrado en el repositorio secundario: $file"
             fi
           done
 
+      - name: Log - Post Merge File Structure
+        run: |
+          echo "📂 Estructura de archivos después de la fusión:"
+          ls -lR base-repo
+
       - name: Continue with Build Process
         run: |
+          echo "🔄 Iniciando compilación..."
           cd base-repo
           chmod +x scripts/build_ygopro.sh
           ./scripts/build_ygopro.sh
+          echo "✅ Compilación finalizada."
 
       - name: Validate Binary Existence
         run: |
+          echo "🔍 Verificando existencia del binario compilado..."
           if [ ! -f base-repo/build/ygopro ]; then
-            echo "Binary not found!"
+            echo "❌ Binary not found! Error en la compilación."
             exit 1
           fi
+          echo "✅ Binario encontrado: base-repo/build/ygopro"
 
       - name: Upload YGOPRO Binary as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ygopro-binary
           path: base-repo/build/ygopro
+
+      - name: Log - Build Completed
+        run: echo "🎉 Proceso completado exitosamente. Binario generado y almacenado como artefacto."
+
 
 
 
