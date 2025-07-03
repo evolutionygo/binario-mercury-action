@@ -26,16 +26,7 @@ COPY --from=premake-builder /usr/src/premake/bin/release/premake5 /usr/bin/prema
 WORKDIR /usr/src
 RUN git clone --branch=server --recursive --depth=1 https://github.com/mycard/ygopro ygopro
 
-# Clonamos el repositorio que contiene los archivos modificados
-RUN git clone --branch=server --depth=1 https://github.com/termitaklk/ygopro-evolution-bin ygopro-mods
-
-# Reemplazamos los archivos dentro de gframe con los de ygopro-mods
-RUN cp -f ygopro-mods/gframe/deck_manager.cpp ygopro/gframe/deck_manager.cpp && \
-    cp -f ygopro-mods/gframe/deck_manager.h ygopro/gframe/deck_manager.h && \
-    cp -f ygopro-mods/gframe/data_manager.cpp ygopro/gframe/data_manager.cpp && \
-    echo "✅ Archivos de gframe reemplazados correctamente."
-
-# Compilación de YGOPro con los archivos modificados
+# Compilación de YGOPro
 WORKDIR /usr/src/ygopro
 RUN git submodule foreach git checkout master && \
     premake5 gmake --lua-deb && \
