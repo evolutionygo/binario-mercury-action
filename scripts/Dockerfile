@@ -5,10 +5,10 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/log/*
 
 WORKDIR /usr/src
-RUN wget -O premake.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta1/premake-5.0.0-beta1-src.zip && \
+RUN wget -O premake.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta1/premake-5.0.0-beta5-src.zip && \
     7z x -y premake.zip && \
     mv premake-5.0.0-beta1-src premake && \
-    cd premake/build/gmake2.unix && \
+    cd premake/build/gmake.unix && \
     make -j$(nproc)
 
 # Segunda etapa: Compilación de YGOPro con archivos modificados
