@@ -24,7 +24,7 @@ COPY --from=premake-builder /usr/src/premake/bin/release/premake5 /usr/bin/prema
 
 # Clonamos el repositorio base (Mycard/YGOPro)
 WORKDIR /usr/src
-RUN git clone --branch=server --recursive --depth=1 https://github.com/mycard/ygopro ygopro
+RUN git clone --branch=server --recursive --depth=1 https://github.com/termitaklk/ygopro-evolution-bin ygopro
 
 # Compilación de YGOPro
 WORKDIR /usr/src/ygopro
