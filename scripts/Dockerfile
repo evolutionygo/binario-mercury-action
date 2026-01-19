@@ -8,10 +8,18 @@ WORKDIR /usr/src
 RUN set -eux; \
     wget -O premake.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta7/premake-5.0.0-beta7-src.zip; \
     7z x -y premake.zip; \
-    PREMAKE_DIR="$(find . -maxdepth 1 -type d -name 'premake*' | head -n 1)"; \
-    echo "Detected premake dir: ${PREMAKE_DIR}"; \
-    test -n "${PREMAKE_DIR}"; \
-    mv "${PREMAKE_DIR}" premake; \
+    echo "=== After extract (top level) ==="; \
+    ls -la; \
+    if [ -d premake ]; then \
+      echo "premake/ already exists, skipping mv"; \
+    else \
+      PREMAKE_DIR="$(find . -maxdepth 1 -mindepth 1 -type d -name 'premake*' | sort | head -n 1)"; \
+      echo "Detected premake dir: ${PREMAKE_DIR:-<empty>}"; \
+      test -n "${PREMAKE_DIR:-}"; \
+      mv "${PREMAKE_DIR}" premake; \
+    fi; \
+    echo "=== premake/ contents ==="; \
+    ls -la premake; \
     cd premake/build/gmake2.unix; \
     make -j"$(nproc)"
 
