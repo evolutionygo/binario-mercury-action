@@ -11,8 +11,19 @@ RUN set -eux; \
     rm -rf premake; \
     mkdir -p premake; \
     7z x -y premake.zip -opremake; \
-    cd premake/build/gmake2.unix; \
+    echo "=== Top of premake/ ==="; \
+    ls -la premake; \
+    echo "=== Searching for gmake2.unix ==="; \
+    GM2_DIR="$(find premake -type d -path '*/build/gmake2.unix' | head -n 1)"; \
+    if [ -z "${GM2_DIR}" ]; then \
+      echo "gmake2.unix not found, searching for gmake.unix"; \
+      GM2_DIR="$(find premake -type d -path '*/build/gmake.unix' | head -n 1)"; \
+    fi; \
+    echo "Detected build dir: ${GM2_DIR:-<empty>}"; \
+    test -n "${GM2_DIR:-}"; \
+    cd "${GM2_DIR}"; \
     make -j"$(nproc)"
+
 
 # Segunda etapa: Compilación de YGOPro con archivos modificados
 FROM debian:bullseye AS ygopro-builder
