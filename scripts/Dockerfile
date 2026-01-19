@@ -1,7 +1,8 @@
 FROM debian:bullseye AS premake-builder
 
 RUN apt-get update && \
-    env DEBIAN_FRONTEND=noninteractive apt-get install -y wget build-essential p7zip-full && \
+    env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      wget build-essential p7zip-full uuid-dev && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/log/*
 
 WORKDIR /usr/src
