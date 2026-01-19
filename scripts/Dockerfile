@@ -5,11 +5,15 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/log/*
 
 WORKDIR /usr/src
-RUN wget -O premake.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta7/premake-5.0.0-beta7-src.zip && \
-    7z x -y premake.zip && \
-    mv premake-5.0.0-beta7-src premake && \
-    cd premake/build/gmake2.unix && \
-    make -j$(nproc)
+RUN set -eux; \
+    wget -O premake.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta7/premake-5.0.0-beta7-src.zip; \
+    7z x -y premake.zip; \
+    PREMAKE_DIR="$(find . -maxdepth 1 -type d -name 'premake*' | head -n 1)"; \
+    echo "Detected premake dir: ${PREMAKE_DIR}"; \
+    test -n "${PREMAKE_DIR}"; \
+    mv "${PREMAKE_DIR}" premake; \
+    cd premake/build/gmake2.unix; \
+    make -j"$(nproc)"
 
 # Segunda etapa: Compilación de YGOPro con archivos modificados
 FROM debian:bullseye AS ygopro-builder
