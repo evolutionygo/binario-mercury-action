@@ -5,21 +5,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/log/*
 
 WORKDIR /usr/src
+
 RUN set -eux; \
     wget -O premake.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta7/premake-5.0.0-beta7-src.zip; \
-    7z x -y premake.zip; \
-    echo "=== After extract (top level) ==="; \
-    ls -la; \
-    if [ -d premake ]; then \
-      echo "premake/ already exists, skipping mv"; \
-    else \
-      PREMAKE_DIR="$(find . -maxdepth 1 -mindepth 1 -type d -name 'premake*' | sort | head -n 1)"; \
-      echo "Detected premake dir: ${PREMAKE_DIR:-<empty>}"; \
-      test -n "${PREMAKE_DIR:-}"; \
-      mv "${PREMAKE_DIR}" premake; \
-    fi; \
-    echo "=== premake/ contents ==="; \
-    ls -la premake; \
+    rm -rf premake; \
+    mkdir -p premake; \
+    7z x -y premake.zip -opremake; \
     cd premake/build/gmake2.unix; \
     make -j"$(nproc)"
 
